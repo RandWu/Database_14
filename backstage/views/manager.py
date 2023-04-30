@@ -1,13 +1,14 @@
 from flask import Blueprint, render_template, request, url_for, redirect, flash
-from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
-from link import *
-from api.sql import *
+from flask_login import login_required, current_user
+import api.sql as sql
 import imp, random, os, string
 from werkzeug.utils import secure_filename
 from flask import current_app
+import utilities as u
 
 UPLOAD_FOLDER = 'static/product'
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg'])
+manager_path1 = r'manager.productManager'
 
 manager = Blueprint('manager', __name__, template_folder='../templates')
 
@@ -19,148 +20,153 @@ def config():
 @manager.route('/', methods=['GET', 'POST'])
 @login_required
 def home():
-    return redirect(url_for('manager.productManager'))
+    return redirect(url_for(manager_path1))
 
 @manager.route('/productManager', methods=['GET', 'POST'])
 @login_required
 def productManager():
-    if request.method == 'GET':
-        if(current_user.role == 'user'):
-            flash('No permission')
-            return redirect(url_for('index'))
+    scholarship = sql.Scholarships()
+    
+    if request.method == 'GET' and current_user.role == 'user':
+        flash('No permission')
+        return redirect(url_for('index'))
         
     if 'delete' in request.values:
-        pid = request.values.get('delete')
-        data = Record.delete_check(pid)
-        
-        if(data != None):
-            flash('failed')
+        scholarship_id = request.values.get('delete')
+        if scholarship.is_omit_okay(scholarship_id):
+            scholarship.omit_scholarships(scholarship_id)
         else:
-            data = Product.get_product(pid)
-            Product.delete_product(pid)
+            flash('failed')
     
     elif 'edit' in request.values:
-        pid = request.values.get('edit')
-        return redirect(url_for('manager.edit', pid=pid))
+        scholarship_id = request.values.get('edit')
+        return redirect(url_for('manager.edit', pid=scholarship_id))
     
-    book_data = book()
-    return render_template('productManager.html', book_data = book_data, user=current_user.name)
+    scholarship_data = scholarships_to_display(scholarship)
+    return render_template('productManager.html', book_data = scholarship_data, user=current_user.name)
 
-def book():
-    book_row = Product.get_all_product()
-    book_data = []
-    for i in book_row:
-        book = {
-            '商品編號': i[0],
-            '商品名稱': i[1],
-            '商品售價': i[2],
-            '商品類別': i[3]
-        }
-        book_data.append(book)
-    return book_data
+def scholarships_to_display(scholarship: sql.Scholarships) -> list:
+    fetch_data = scholarship.get_all_scholarship()
+    if not fetch_data:
+        return list()
+    list_of_dict = [{
+            '獎學金編號': i[0],
+            '獎學金名稱': i[1],
+            '獎學金等級': i[2],
+            '獎學金頒發年分': i[3],
+            '獎學金頒發單位': i[4]
+        } for i in fetch_data]
+    return list_of_dict
 
 @manager.route('/add', methods=['GET', 'POST'])
 def add():
+    current = u.get_current_time().year
+    scholarships = sql.Scholarships()
+
     if request.method == 'POST':
-        data = ""
-        while(data != None):
-            number = str(random.randrange( 10000, 99999))
-            en = random.choice(string.ascii_letters)
-            pid = en + number
-            data = Product.get_product(pid)
-
         name = request.values.get('name')
-        price = request.values.get('price')
-        category = request.values.get('category')
-        description = request.values.get('description')
-
-        if (len(name) < 1 or len(price) < 1):
-            return redirect(url_for('manager.productManager'))
+        if not u.check_input(name):
+            flash("Invalid Name")
+            return redirect(url_for(manager_path1))
         
-        Product.add_product(
-            {'pid' : pid,
-             'name' : name,
-             'price' : price,
-             'category' : category,
-             'description':description
-            }
-        )
+        rank = request.values.get('rank')
+        try:
+            rank = int(rank)
+        except ValueError:
+            flash("Rank is not an number!")
+            return redirect(url_for(manager_path1))
+        if not u.check_number(rank, ranges=range(1,6)):
+            flash("Rank out of range!")
+            return redirect(url_for(manager_path1))
+        
+        year = request.values.get('year')
+        try:
+            year = int(year)
+        except ValueError:
+            flash("Year is not a number!")
+            return redirect(url_for(manager_path1))
+        if not u.check_number(year, range(1990, current + 1)):
+            flash("Year out of range!")
+            return redirect(url_for(manager_path1))
 
-        return redirect(url_for('manager.productManager'))
+        issuer = request.values.get('issuer')
+        if not u.check_input(issuer):
+            flash("Invalid Name")
+            return redirect(url_for(manager_path1))
+        
+        userinput = {
+            "name": name,
+            "rank": rank,
+            "year": year,
+            "issuer": issuer
+        }
 
-    return render_template('productManager.html')
+        scholarships.create_scholarship(userinput)
+
+        return redirect(url_for(manager_path1))
+
+    return render_template('productManager.html', current_year = current)
 
 @manager.route('/edit', methods=['GET', 'POST'])
 @login_required
 def edit():
-    if request.method == 'GET':
-        if(current_user.role == 'user'):
-            flash('No permission')
-            return redirect(url_for('bookstore'))
+    scholarship = sql.Scholarships()
+    
+    if request.method == 'GET' and current_user.role == 'user':
+        flash('No permission')
+        return redirect(url_for('bookstore'))
 
     if request.method == 'POST':
-        Product.update_product(
-            {
-            'name' : request.values.get('name'),
-            'price' : request.values.get('price'),
-            'category' : request.values.get('category'), 
-            'description' : request.values.get('description'),
-            'pid' : request.values.get('pid')
-            }
-        )
+        name = request.values.get('name')
+        if not u.check_input(name):
+            flash("Invalid Name")
+            return redirect(url_for(manager_path1))
         
-        return redirect(url_for('manager.productManager'))
+        rank = request.values.get('rank')
+        try:
+            rank = int(rank)
+        except ValueError:
+            flash("Rank is not an number!")
+            return redirect(url_for(manager_path1))
+        if not u.check_number(rank, ranges=range(1,6)):
+            flash("Rank out of range!")
+            return redirect(url_for(manager_path1))
+        
+        year = request.values.get('year')
+        try:
+            year = int(year)
+        except ValueError:
+            flash("Year is not a number!")
+            return redirect(url_for(manager_path1))
+        if not u.check_number(year, range(1990, current + 1)):
+            flash("Year out of range!")
+            return redirect(url_for(manager_path1))
+
+        issuer = request.values.get('issuer')
+        if not u.check_input(issuer):
+            flash("Invalid Name")
+            return redirect(url_for(manager_path1))
+        schid = int(request.values.get('pid'))
+
+        userinput = {
+            "id": schid,
+            "name": name,
+            "rank": rank,
+            "year": year,
+            "issuer": issuer
+        }
+        scholarship.update_scholarship(userinput)
+        
+        return redirect(url_for(manager_path1))
 
     else:
-        product = show_info()
-        return render_template('edit.html', data=product)
+        i = scholarship.get_scholarship()
+        one_scholarship = {
+            '獎學金編號': i[0],
+            '獎學金名稱': i[1],
+            '獎學金等級': i[2],
+            '獎學金頒發年分': i[3],
+            '獎學金頒發單位': i[4]
+        }
+        return render_template('edit.html', data=one_scholarship)
 
-
-def show_info():
-    pid = request.args['pid']
-    data = Product.get_product(pid)
-    pname = data[1]
-    price = data[2]
-    category = data[3]
-    description = data[4]
-
-    product = {
-        '商品編號': pid,
-        '商品名稱': pname,
-        '單價': price,
-        '類別': category,
-        '商品敘述': description
-    }
-    return product
-
-
-@manager.route('/orderManager', methods=['GET', 'POST'])
-@login_required
-def orderManager():
-    if request.method == 'POST':
-        pass
-    else:
-        order_row = Order_List.get_order()
-        order_data = []
-        for i in order_row:
-            order = {
-                '訂單編號': i[0],
-                '訂購人': i[1],
-                '訂單總價': i[2],
-                '訂單時間': i[3]
-            }
-            order_data.append(order)
-            
-        orderdetail_row = Order_List.get_orderdetail()
-        order_detail = []
-
-        for j in orderdetail_row:
-            orderdetail = {
-                '訂單編號': j[0],
-                '商品名稱': j[1],
-                '商品單價': j[2],
-                '訂購數量': j[3]
-            }
-            order_detail.append(orderdetail)
-
-    return render_template('orderManager.html', orderData = order_data, orderDetail = order_detail, user=current_user.name)

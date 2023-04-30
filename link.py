@@ -5,3 +5,6 @@ connection = oracledb.connect(
     password="hd9qaY5L2t",
     dsn=oracledb.makedsn("140.117.69.60", 1521, service_name='ORCLPDB1')
 )
+
+def disconnect(conn) -> None:
+    conn.close()

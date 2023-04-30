@@ -1,6 +1,5 @@
 from flask import render_template, Blueprint
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
-from link import *
 from api.sql import Analysis
 
 analysis = Blueprint('analysis', __name__, template_folder='../templates')

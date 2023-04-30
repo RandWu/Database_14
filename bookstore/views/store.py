@@ -22,10 +22,9 @@ def bookstore():
     count = math.ceil(result[0]/9)
     flag = 0
     
-    if request.method == 'GET':
-        if(current_user.role == 'manager'):
-            flash('No permission')
-            return redirect(url_for('manager.home'))
+    if request.method == 'GET' and current_user.role == 'manager':
+        flash('No permission')
+        return redirect(url_for('manager.home'))
 
     if 'keyword' in request.args and 'page' in request.args:
         total = 0
