@@ -12,9 +12,6 @@
 
     <div class="form_div">
         <form  method='post' action={{ url_for('api.register') }} >
-            <p class="mb-3">
-                姓名：<input type="text" name="username" required/>
-            </p>
     
             <p class="mb-3">
                 帳號：<input type="text" name="account" required/>
@@ -39,7 +36,7 @@
                     <option value="O" >其他</option>
                 </select>
             </div>            
-            <label for="date-input">Select a date:</label>
+            <label for="date-input">選擇生日:</label>
             <input type="datetime-local" id="date" name="date">
             <div class="btn_div mb-4" style="margin-bottom: 1rem;">
                 <p class="option_div">選擇你要註冊的身份：</p>

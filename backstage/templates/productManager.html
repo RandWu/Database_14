@@ -32,6 +32,30 @@
 {% endif %}
 {% endwith %}
 
+{% with messages = get_flashed_messages() %}
+{% if messages[0] == 'Invalid Name' %}
+  
+<script language="javascript">
+
+  alert('只能英數、hypen, undersocre, space');
+
+</script>
+
+{% endif %}
+{% endwith %}
+
+{% with messages = get_flashed_messages() %}
+{% if messages[0] == 'Invalid Pattern' %}
+  
+<script language="javascript">
+
+  alert('錯誤的正規表達');
+
+</script>
+
+{% endif %}
+{% endwith %}
+
 <script>
     $(document).ready(function(){
         $("#keyword").on("keyup", function() {
@@ -46,12 +70,11 @@
 &nbsp;
 <div class="d-flex justify-content-between container-xxl">
     <div class="d-flex col-sm-4">
-        <span class="input-group-text" id="basic-addon1">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
-            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
-          </svg>
-        </span>
-        <input class="form-control me-2" id="keyword" placeholder="搜尋商品" aria-label="Search">
+        <form action="{{ url_for('manager.productManager') }}" method="post">
+            <input type="text" name="search" placeholder="搜尋">
+            <input type="checkbox" name="regex" value="true"> 使用正規表達式
+            <button type="submit">搜尋</button>
+        </form>
     </div>
     <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
         新增獎學金
@@ -79,7 +102,7 @@
                         <label for="inputProductCategory" class="form-label">獎學金頒發年分</label>
                         <select id="inputProductCategory" class="form-select" name="year" required>
                             <option selected disabled value="">請選擇類型</option>
-                            {% for y in range(1990, current_year+1) %}
+                            {% for y in range(1990, current_year + 1) %}
                                 <option value="{{ y }}">{{ y }}</option>
                             {% endfor %}
                         </select>
@@ -114,7 +137,7 @@
             <th style="text-align: center;" colspan="2">資料操作</th>
         </tr>
     </thead>
-    <tbody id="product">
+    <tbody id="scholarship">
     {% for i in book_data %}
         <tr>
             <td style="text-align: center;">{{ i.獎學金編號 }}</td>

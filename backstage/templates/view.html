@@ -1,0 +1,74 @@
+{% extends "backstage.html" %}
+{% block head %}
+{{ super() }}
+{% endblock head %}
+
+{% block title %} 獎學金管理 {% endblock title %}
+
+{% block content %}
+
+{% with messages = get_flashed_messages() %}
+{% if messages[0] == 'No permission' %}
+  
+<script language="javascript">
+
+  alert('您沒有使用者的權限喔！');
+
+</script>
+
+
+{% endif %}
+{% endwith %}
+
+<a href="{{ url_for('manager.applyManager') }}" class="btn btn-primary">Go to Apply Manager</a>
+
+<style>
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+  
+    .table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+      font-size: 16px;
+      text-align: center;
+    }
+  
+    .table th {
+      background-color: #f2f2f2;
+      padding: 8px;
+      font-weight: bold;
+      text-transform: uppercase;
+      border: 1px solid #ddd;
+    }
+  
+    .table td {
+      padding: 8px;
+      border: 1px solid #ddd;
+    }
+  </style>
+
+<div class="container">
+    <div class="table-responsive">
+      <table class="table table-striped table-bordered table-hover">
+        <thead class="thead-dark">
+          <tr>
+            <th>Key</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for key, value in onedict.items() %}
+          <tr>
+            <td>{{ key }}</td>
+            <td>{{ value }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock content%}

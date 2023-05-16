@@ -15,7 +15,8 @@ cursor = db.connect()
 a = misc.get_college()
 b = scholarship.get_scholarship("1")
 print(b)
-
+applied = misc.get_applied_scholarships()
+print(applied)
 
 
 # password = "P@s5w0rd"

@@ -14,20 +14,32 @@ register_path = r'api.register'
 login_path = r'api.login'
 
 class User(UserMixin):
-    pass
+    def __init__(self, user_id: str, username: str, role: str) -> None:
+        super().__init__()
+        self.id = user_id
+        self.username = username
+        self.role = role
+    
+    def __repr__(self) -> str:
+        return self.username
+
+    def get_id(self) -> str:
+        return str(self.id)
+    
+    def get_role(self) -> str:
+        return str(self.role)
 
 @login_manager.user_loader
 def user_loader(userid):  
-    user = User()
     student = sql.Students()
-    user.id = userid
     data = student.get_role(userid)
     try:
-        user.role = data[0]
-        user.name = data[1]
+        role = data[0]
+        name = data[1]
     except IndexError:
         flash('Unknown exception')
         return redirect(url_for(login_path))
+    user = User(userid, name, role)
     return user
 
 @api.route('/login', methods=['POST', 'GET'])
@@ -43,7 +55,7 @@ def login():
         
         password = request.form['password']
         password = u.sha1_hash(password)
-        credentials = student.get_student(account)
+        credentials = student.fetch_login_info(account)
 
         try:
             hashed = credentials[1]
@@ -55,8 +67,7 @@ def login():
             return redirect(url_for(login_path))
 
         if(hashed == password):
-            user = User()
-            user.id = user_id
+            user = User(user_id, account, role)
             login_user(user)
 
             if( role == 'user'):
@@ -84,7 +95,7 @@ def register():
         # Get existing student
         exist_account = student.get_all_student()
         # Check return value
-        if "list" not in type(exist_account) or "tuple" not in type(exist_account):
+        if not isinstance(exist_account, (list, tuple)):
             flash("Unknown exception")
             return redirect(url_for(register_path))
         # Get all Student name.
@@ -107,9 +118,9 @@ def register():
             userinput = { 
                 'name': user_account,
                 'sex': request.form['sex'],
-                'password':password, 
+                'birthday': formatted_date,
                 'role':request.form['role'],
-                'date': formatted_date
+                'password':password
             }
             student.create_student(userinput)
             return redirect(url_for(login_path))

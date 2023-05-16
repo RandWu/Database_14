@@ -1,0 +1,106 @@
+{% extends "backstage.html" %}
+{% block head %}
+{{ super() }}
+{% endblock head %}
+
+{% block title %} 獎學金管理 {% endblock title %}
+
+{% block content %}
+
+{% with messages = get_flashed_messages() %}
+{% if messages[0] == 'No permission' %}
+  
+<script language="javascript">
+
+  alert('您沒有使用者的權限喔！');
+
+</script>
+{% endif %}
+{% endwith %}
+
+<script>
+function showPrompt(schid, studid) {
+  var options = ["accept", "not determined", "reject"];
+  var promptText = "Choose a decision:";
+  for (var i = 0; i < options.length; i++) {
+    promptText += "\n" + (i+1) + ". " + options[i];
+  }
+  var decision = prompt(promptText);
+  document.getElementById("schid").value = schid;
+  document.getElementById("studid").value = studid;
+  switch (decision) {
+    case "1":
+      document.getElementById("decision").value = "1";
+      break;
+    case "2":
+      document.getElementById("decision").value = "0";
+      break;
+    case "3":
+      document.getElementById("decision").value = "-1";
+      break;
+    default:
+      alert("Invalid decision!");
+  }
+}
+    </script>
+
+<div class="book_table container-xxl">
+    <style>
+      table {
+          border-collapse: collapse;
+          width: 100%;
+      }
+  
+      th, td {
+          text-align: left;
+          padding: 8px;
+          border: 1px solid #ddd;
+      }
+  
+      th {
+          background-color: #4CAF50;
+          color: white;
+      }
+  
+      tr:nth-child(even) {
+          background-color: #f2f2f2;
+      }
+  
+      tr:hover {
+          background-color: #ddd;
+      }
+  </style>
+  <form method='post' action={{ url_for('manager.applyManager') }} >
+    <input type="hidden" id="schid" name="schid" value="">
+    <input type="hidden" id="studid" name="studid" value="">
+  <table id="manager">
+    <thead>
+      <tr>
+        <th>獎學金編號</th>
+        <th>學生ID</th>
+        <th>申請日期</th>
+        <th>狀態</th>
+        <th>查看獎學金</th>
+        <th>查看學生</th>
+        <th>決策</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td>{{ row.獎學金編號 }}</td>
+        <td>{{ row.學生ID }}</td>
+        <td>{{ row.申請日期 }}</td>
+        <td>{{ row.狀態 }}</td>
+        <td><button type="submit" value="{{ row.獎學金編號 }}" name="viewScholarship" class="btn btn-success">查看獎學金</button></td>
+        <td><button type="submit" value="{{ row.學生ID }}" name="viewStudent"  class="btn btn-success">查看學生</button></td>
+        <td><button type="submit" onclick='showPrompt("{{ row.獎學金編號 }}", "{{ row.學生ID }}")' class="btn btn-success">決策</button></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <input type="hidden" id="decision" name="decision" value="">
+  </form> 
+  
+  </div>
+  {% endblock content%}
